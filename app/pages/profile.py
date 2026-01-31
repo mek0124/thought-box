@@ -5,10 +5,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 
-class Dashboard(QWidget):
+class Profile(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("Dashboard")
+        self.setObjectName("Profile")
 
         self.setup_ui()
 
@@ -17,4 +17,3 @@ class Dashboard(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.setAlignment(Qt.AlignCenter)
-        
