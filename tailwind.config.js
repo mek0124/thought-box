@@ -1,0 +1,43 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        background: "#0D0714",
+        surface: "#130A1F",
+        surface_elevated: "#1B112E",
+        surface_light: "#160E26",
+        surface_glass: "rgba(27, 17, 46, 0.85)",
+        surface_glass_hover: "rgba(34, 22, 60, 0.95)",
+        primary: "#9D00FF",
+        primary_dim: "#7A00CC",
+        primary_gradient_start: "#9D00FF",
+        primary_gradient_end: "#CC00FF",
+        secondary: "#251A38",
+        accent: "#CC00FF",
+        accent_hover: "#AA00D6",
+        text_primary: "#F8F0FF",
+        text_secondary: "#E8D0FF",
+        text_muted: "#D0A0FF",
+        text_on_accent: "#0D0714",
+        success: "#00FF88",
+        warning: "#FFD600",
+        error: "#FF3366",
+        code_background: "#0D0714",
+        border: "#2E1C4D",
+        border_light: "#4A2D6E",
+        shadow: "rgba(0, 0, 0, 0.5)",
+        glow: "rgba(157, 0, 255, 0.3)",
+        border_radius_small: "6px",
+        border_radius_medium: "10px",
+        border_radius_large: "12px",
+        shadow_blur: "8px",
+        glow_blur: "12px"
+      }
+    },
+  },
+  plugins: [],
+}
