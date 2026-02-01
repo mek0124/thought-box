@@ -27,5 +27,9 @@ export default defineConfig(async () => ({
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    allowedHosts: [
+      "worryingly-nonpopular-nerissa.ngrok-free.dev",  // Remove https://
+      ".ngrok-free.dev"  // Add wildcard for all ngrok domains
+    ]
   },
 }));
