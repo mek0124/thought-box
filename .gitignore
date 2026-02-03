@@ -1,3 +1,5 @@
 app/storage/
 __pycache__/
 test.py
+dist/
+*.egg-info
