@@ -1,6 +1,9 @@
 from qfluentwidgets import (
-    MSFluentWindow, FluentIcon as fi,
-    setTheme, Theme, setThemeColor
+    MSFluentWindow, 
+    FluentIcon as fi,
+    setTheme, 
+    Theme, 
+    setThemeColor
 )
 
 from .pages.dashboard import Dashboard
@@ -21,7 +24,19 @@ class ThoughtBox(MSFluentWindow):
     def apply_app_styles(self):
         setTheme(Theme.DARK)
         setThemeColor(self.color_theme['primary'])
-        self.setStyleSheet(f"background-color: {self.color_theme['background']}")
+        self.setStyleSheet(
+            f"""
+                MSFluentWindow {{
+                    background-color: {
+                        self.color_theme['background']
+                    }
+                }}
+            """
+        )
 
     def init_navigation(self):
-        self.addSubInterface(self.dashboard, fi.APPLICATION, "Dashboard")
+        self.addSubInterface(
+            self.dashboard, 
+            fi.APPLICATION, 
+            "Dashboard"
+        )
