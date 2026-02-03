@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer
 from qfluentwidgets import FluentIcon as fi
 
-from ..models.entry import Entry
+from ..core.logic import ThoughtBoxLogic
 
 
 class Dashboard(QWidget):
@@ -18,6 +18,8 @@ class Dashboard(QWidget):
         self.db = parent.db
         self.color_theme = parent.color_theme
         self.editing_id = None
+
+        self.logic = ThoughtBoxLogic(self.db)
 
         self.setStyleSheet(
             f"""
@@ -178,113 +180,96 @@ class Dashboard(QWidget):
         self.title_input.setFocus()
         self.load_entries()
 
-    def load_entries(self):
-        entries = self.db.query(Entry).all()
+    def update_entry(self):
+        if not self.editing_id:
+            return self.handle_error_success(f"Target Entry ID Not Set!", True)
         
-        entries_container = QWidget()
-        entries_container.setObjectName("container")
+        updated_title = self.title_input.text().strip()
+        updated_content = self.content_input.toPlainText().strip()
+
+        if not updated_title and not updated_content:
+            return self.handle_error_success("Title & Content Cannot Both Be Empty!", True)
         
-        entries_layout = QHBoxLayout(entries_container)
-        entries_layout.setContentsMargins(10, 10, 10, 10)
-        entries_layout.setSpacing(10)
-        entries_layout.setAlignment(Qt.AlignTop)
+        updated_details = {}
 
-        for entry in entries:
-            entry_card = QWidget()
-            entry_card.setObjectName("entry-card")
-            
-            entry_card_layout = QHBoxLayout(entry_card)
-            entry_card_layout.setContentsMargins(5, 5, 5, 5)
-            entry_card_layout.setSpacing(5)
+        if updated_title:
+            updated_details["title"] = updated_title
 
-            entry_left_container = QWidget()
-            entry_left_container.setObjectName("container")
+        if updated_content:
+            updated_details["content"] = updated_content
 
-            entry_left_container_layout = QVBoxLayout(entry_left_container)
-            entry_left_container_layout.setContentsMargins(10, 0, 0, 10)
-            entry_left_container_layout.setSpacing(5)
+        did_update, response = self.logic.update_entry(self.editing_id, updated_content)
+        
+        if not did_update:
+            return self.handle_error_success(response, did_update)
+        
+        self.editing_id = None
+        self.clear_form()
+        self.load_entries()
+        
+        return self.handle_error_success(response, did_update)
 
-            entry_title = QLabel(entry.title)
-            entry_title.setObjectName("entry-title")
-            
-            content_preview = entry.content[:50] + '...' if len(entry.content) > 50 else entry.content
-            entry_content = QLabel(content_preview)
-            entry_content.setObjectName("entry-content")
+    def save_entry(self):
+        new_title = self.title_input.text().strip()
+        new_content = self.content_input.toPlainText().strip()
 
-            date_row = QWidget()
-            date_row.setObjectName("container")
+        if not new_title and not new_content:
+            return self.handle_error_success(
+                "All Inputs Are Requried!",
+                True
+            )
 
-            date_row_layout = QHBoxLayout(date_row)
-            date_row_layout.setContentsMargins(5, 5, 5, 5)
-            date_row_layout.setSpacing(10)
+        if not new_title:
+            return self.handle_error_success("Title Cannot Be Empty!", True)
 
-            entry_created = QLabel(entry.created_at)
-            entry_created.setObjectName("entry-date")
-            
-            date_row_layout.addWidget(entry_created)
+        if not new_content:
+            return self.handle_error_success("Content Cannot Be Empty!", True)
+        
+        new_entry = {
+            "title": new_title,
+            "content": new_content
+        }
+        
+        did_save, response = self.logic.save_entry(new_entry)
 
-            if entry.updated_at != entry.created_at:
-                entry_updated = QLabel(entry.updated_at)
-                entry_updated.setObjectName("entry-date")
-                entry_updated.setAlignment(Qt.AlignRight)
+        self.clear_form()
+        self.load_entries()
+        return self.handle_error_success(response, did_save)
 
-                date_row_layout.addWidget(entry_updated)
+    def handle_entry_delete(self, entry_id):
+        did_delete, response = self.logic.delete_entry(entry_id)
+        return self.handle_error_success(response, did_delete)
 
-            entry_btn_container = QWidget()
-            entry_btn_container.setObjectName("container")
-
-            entry_btn_container_layout = QVBoxLayout(entry_btn_container)
-            entry_btn_container_layout.setContentsMargins(10, 10, 10, 10)
-            entry_btn_container_layout.setSpacing(10)
-            entry_btn_container_layout.setAlignment(Qt.AlignCenter)
-
-            edit_btn = QPushButton()
-            edit_btn.setObjectName("entry-button")
-            edit_btn.setIcon(fi.PENCIL_INK.icon())
-            edit_btn.clicked.connect(lambda: self.edit_entry(entry.id))
-
-            delete_btn = QPushButton()
-            delete_btn.setObjectName("entry-button")
-            delete_btn.setIcon(fi.DELETE.icon())
-            delete_btn.clicked.connect(lambda: self.delete_entry(entry.id))
-
-            entry_left_container_layout.addWidget(entry_title)
-            entry_left_container_layout.addWidget(entry_content)
-            entry_left_container_layout.addWidget(date_row)
-
-            entry_btn_container_layout.addWidget(edit_btn)
-            entry_btn_container_layout.addWidget(delete_btn)
-
-            entry_card_layout.addWidget(entry_left_container, 2)
-            entry_card_layout.addWidget(entry_btn_container)
-
-            entries_layout.addWidget(entry_card)
-
-        self.scroll_area.setWidget(entries_container)
-
-    def edit_entry(self, entry_id):
+    def handle_entry_edit(self, entry_id):
         if not entry_id:
-            return self.handle_error_success("Entry ID Cannot Be Empty")
+            return self.handle_error_success("Entry ID Cannot Be Empty", True)
         
-        found_entry = self.db.query(Entry).filter(Entry.id == entry_id).first()
-        self.editing_id = found_entry.id
+        found_entry = self.logic.get_entry_by_id(entry_id)
 
         if not found_entry:
-            return self.handle_error_success(f"No Entry Found By ID: {entry_id}")
+            return self.handle_error_success(f"No Entry Found By ID: {entry_id}", True)
+        
+        self.editing_id = found_entry.id
+        
+        self.title_input.clear()
+        self.content_input.clear()
         
         self.title_input.setText(found_entry.title)
         self.content_input.setText(found_entry.content)
 
-    def delete_entry(self, entry_id):
-        if not entry_id:
-            return self.handle_error_success("Entry ID Cannot Be Empty!")
-        
-        self.db.query(Entry).filter(Entry.id == entry_id).delete()
-        self.db.commit()
-        self.clear_form()
-        self.load_entries()
+    def handle_save(self):
+        if self.editing_id:
+            self.update_entry()
 
-    def handle_error_success(self, msg: str, is_error: bool = True):
+        else:
+            self.save_entry()
+    
+    def clear_form(self):
+        self.title_input.clear()
+        self.content_input.clear()
+        self.title_input.setFocus()
+
+    def handle_error_success(self, msg: str, is_error: bool):
         if is_error:
             self.status_bar.setStyleSheet(
                 f"""
@@ -427,74 +412,99 @@ class Dashboard(QWidget):
 
         layout.addWidget(right_container, 1)
         return layout
-    
-    def clear_form(self):
-        self.title_input.clear()
-        self.content_input.clear()
-        self.title_input.setFocus()
 
-    def handle_save(self):
-        if self.editing_id:
-            self.update_entry()
-
-        else:
-            self.save_entry()
-
-    def update_entry(self):
-        if not self.editing_id:
-            return self.handle_error_success(f"Target Entry ID Not Set!")
+    def load_entries(self):
+        entries = self.logic.get_all_entries()
         
-        updated_title = self.title_input.text().strip()
-        updated_content = self.content_input.toPlainText().strip()
-
-        if not updated_title and not updated_content:
-            return self.handle_error_success("Title & Content Cannot Both Be Empty!")
+        entries_container = QWidget()
+        entries_container.setObjectName("container")
         
-        updated_details = {}
+        entries_layout = QVBoxLayout(entries_container)
+        entries_layout.setContentsMargins(10, 10, 10, 10)
+        entries_layout.setSpacing(10)
+        entries_layout.setAlignment(Qt.AlignTop)
 
-        if updated_title:
-            updated_details["title"] = updated_title
+        for entry in entries:
+            entry_card = QWidget()
+            entry_card.setObjectName("entry-card")
+            
+            entry_card_layout = QVBoxLayout(entry_card)
+            entry_card_layout.setContentsMargins(5, 5, 5, 5)
+            entry_card_layout.setSpacing(5)
 
-        if updated_content:
-            updated_details["content"] = updated_content
-        
-        found_entry = self.db.query(Entry).filter(Entry.id == self.editing_id).first()
+            title_container = QWidget()
+            title_container.setObjectName("container")
 
-        if not found_entry:
-            return self.handle_error_success(f"No Entry Found By ID: {self.editing_id}")
-        
-        self.db.query(Entry).filter(Entry.id == self.editing_id).update(updated_details)
-        self.db.commit()
-        
-        self.editing_id = None
-        self.clear_form()
-        self.load_entries()
-        
-        return self.handle_error_success("Entry Updated Successfully!", False)
+            title_container_layout = QHBoxLayout(title_container)
+            title_container_layout.setContentsMargins(10, 0, 0, 0)
+            title_container_layout.setSpacing(0)
+            title_container_layout.setAlignment(Qt.AlignCenter)
 
-    def save_entry(self):
-        if self.editing_id:
-            return self.update_entry()
-        
-        new_title = self.title_input.text().strip()
-        new_content = self.content_input.toPlainText().strip()
+            entry_title = QLabel(entry.title)
+            entry_title.setObjectName("entry-title")
 
-        if not new_title or not new_content:
-            return self.handle_error_success("Title & Content Are Required!")
-        
-        existing_title = self.db.query(Entry).filter(Entry.title == new_title).first()
+            title_container_layout.addWidget(entry_title, 2)
 
-        if existing_title:
-            return self.handle_error_success("Title Already Exist!")
-        
-        new_entry = Entry(
-            title = new_title,
-            content = new_content
-        )
+            date_col = QWidget()
+            date_col.setObjectName("container")
 
-        self.db.add(new_entry)
-        self.db.commit()
-        self.clear_form()
-        self.load_entries()
+            date_col_layout = QVBoxLayout(date_col)
+            date_col_layout.setContentsMargins(5, 5, 5, 5)
+            date_col_layout.setSpacing(10)
+            date_col_layout.setAlignment(Qt.AlignCenter | Qt.AlignLeft)
 
-        return self.handle_error_success("Entry Saved Successfully!", False)
+            entry_created = QLabel(f"Created On: {entry.created_at}")
+            entry_created.setObjectName("entry-date")
+            
+            date_col_layout.addWidget(entry_created)
+
+            if entry.updated_at != entry.created_at:
+                entry_updated = QLabel(f"Last Updated: {entry.updated_at}")
+                entry_updated.setObjectName("entry-date")
+                entry_updated.setAlignment(Qt.AlignRight)
+
+                date_col_layout.addWidget(entry_updated)
+
+            title_container_layout.addWidget(date_col)
+
+            body_container = QWidget()
+            body_container.setObjectName("container")
+
+            body_container_layout = QHBoxLayout(body_container)
+            body_container_layout.setContentsMargins(10, 0, 0, 0)
+            body_container_layout.setSpacing(0)
+            body_container_layout.setAlignment(Qt.AlignCenter)
+            
+            content_preview = entry.content[:50] + '...' if len(entry.content) > 50 else entry.content
+            entry_content = QLabel(content_preview)
+            entry_content.setObjectName("entry-content")
+
+            body_container_layout.addWidget(entry_content, 2)
+
+            entry_btn_container = QWidget()
+            entry_btn_container.setObjectName("container")
+
+            entry_btn_container_layout = QVBoxLayout(entry_btn_container)
+            entry_btn_container_layout.setContentsMargins(10, 10, 10, 10)
+            entry_btn_container_layout.setSpacing(10)
+            entry_btn_container_layout.setAlignment(Qt.AlignCenter)
+
+            edit_btn = QPushButton("🖋️")
+            edit_btn.setObjectName("entry-button")
+            edit_btn.clicked.connect(lambda checked=False, eid=entry.id: self.handle_entry_edit(eid))
+
+            delete_btn = QPushButton("🗑️")
+            delete_btn.setObjectName("entry-button")
+            delete_btn.clicked.connect(lambda checked=False, eid=entry.id: self.handle_entry_delete(eid))
+
+            entry_btn_container_layout.addWidget(edit_btn)
+            entry_btn_container_layout.addWidget(delete_btn)
+
+            body_container_layout.addWidget(entry_btn_container)
+
+            entry_card_layout.addWidget(title_container)
+            entry_card_layout.addWidget(body_container)
+
+            entries_layout.addWidget(entry_card)
+
+        self.scroll_area.setWidget(entries_container)
