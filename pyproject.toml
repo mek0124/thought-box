@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thought-box"
+version = "1.0.0"
+description = "A light-weight, local-first journaling desktop application"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "mek0124", email = "mek0124@proton.me"},
+]
+maintainers = [
+    {name = "mek0124", email = "mek0124@proton.me"},
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Office/Business :: Scheduling",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Environment :: X11 Applications :: Qt",
+]
+keywords = ["desktop", "task-manager", "productivity", "local-first", "qt"]
+dependencies = [
+    "pyside6 >= 6.9.1",
+    "sqlalchemy >= 2.0",
+    "python-dotenv >= 1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mek0124/momentum"
+Repository = "https://github.com/mek0124/momentum.git"
+Issues = "https://github.com/mek0124/momentum/issues"
+
+[project.scripts]
+momentum = "main:run"
+
+[project.gui-scripts]
+momentum-gui = "main:run"
+
+[project.optional-dependencies]
+dev = [
+    "black >= 24.0",
+    "ruff >= 0.4",
+    "mypy >= 1.0",
+]
+test = [
+    "pytest >= 7.0",
+    "pytest-qt >= 4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = [
+    "app/storage*",
+    "*test*",
+    "*__pycache__*",
+]
+
+[tool.setuptools.package-data]
+app = ["assets/*.png"]
