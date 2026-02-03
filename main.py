@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtGui import QPixmap
 from pathlib import Path
 
 from app.app import ThoughtBox
@@ -149,6 +150,9 @@ if __name__ == '__main__':
         sys.exit(0)
     
     window = ThoughtBox(COLOR_THEME, db)
+    window.setMinimumHeight(600)
+    window.setMinimumWidth(800)
+    window.setWindowIcon(QPixmap("./app/assets/original.png"))
     window.show()
     
     sys.exit(app.exec())
