@@ -27,14 +27,14 @@ class Entry(Base):
     content = Column(String)
 
     created_at = Column(
-        DateTime,
+        String,
         index = True,
-        default = lambda: datetime.now()
+        default = lambda: datetime.now().__format__('%m/%d/%Y - %H:%M:%S')
     )
 
-    update_at = Column(
-        DateTime,
+    updated_at = Column(
+        String,
         index = True,
-        default = lambda: datetime.now(),
-        onupdate = lambda: datetime.now()
+        default = lambda: datetime.now().__format__('%m/%d/%Y - %H:%M:%S'),
+        onupdate = lambda: datetime.now().__format__('%m/%d/%Y - %H:%M:%S')
     )

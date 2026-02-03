@@ -150,9 +150,7 @@ if __name__ == '__main__':
         sys.exit(0)
     
     window = ThoughtBox(COLOR_THEME, db)
-    window.setMinimumHeight(600)
-    window.setMinimumWidth(800)
     window.setWindowIcon(QPixmap("./app/assets/original.png"))
-    window.show()
+    window.showMaximized()
     
     sys.exit(app.exec())

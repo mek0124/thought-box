@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QTextEdit,
-    QPushButton, QStatusBar
+    QPushButton, QStatusBar, QScrollArea
 )
 
 from PySide6.QtCore import Qt, QTimer
+from qfluentwidgets import FluentIcon as fi
 
 from ..models.entry import Entry
 
@@ -26,6 +27,73 @@ class Dashboard(QWidget):
 
                 QWidget#row-container {{
                     border: none;
+                }}
+
+                QWidget#summary-area {{
+                    border-right: 2px solid {self.color_theme['primary']};
+                    border-top: 2px solid {self.color_theme['primary']};
+                    border-bottom: 2px solid {self.color_theme['primary']};
+                    border-radius: {self.color_theme['border_radius_small']};
+                }}
+
+                                QScrollArea {{
+                    border-left: 2px solid {self.color_theme['primary']};
+                    border-top: 2px solid {self.color_theme['primary']};
+                    border-bottom: 2px solid {self.color_theme['primary']};
+                    border-radius: {self.color_theme['border_radius_small']};
+                }}
+
+                QScrollArea {{
+                    border-left: 2px solid {self.color_theme['primary']};
+                    border-top: 2px solid {self.color_theme['primary']};
+                    border-bottom: 2px solid {self.color_theme['primary']};
+                    border-radius: {self.color_theme['border_radius_small']};
+                }}
+
+                QScrollArea > QWidget > QWidget {{
+                    background-color: transparent;
+                    border: none;
+                }}
+
+                QWidget#entry-card {{
+                    background-color: {self.color_theme['surface_glass']};
+                    border-radius: {self.color_theme['border_radius_small']};
+                    border: none;
+                }}
+
+                QWidget#entry-card QWidget {{
+                    background-color: transparent;
+                    border: none;
+                }}
+
+                QWidget#entry-card QLabel {{
+                    background-color: transparent;
+                    border: none;
+                }}
+
+                QLabel#entry-title {{
+                    font-weight: bold;
+                    font-style: italic;
+                    font-size: 14px;
+                    color: {self.color_theme['primary']};
+                    border: none;
+                }}
+
+                QLabel#entry-content {{
+                    font-size: 12px;
+                    color: {self.color_theme['text_primary']};
+                    border: none;
+                }}
+
+                QLabel#entry-date {{
+                    font-size: 10px;
+                    color: {self.color_theme['text_secondary']};
+                    border: none;
+                }}
+
+                QPushButton#entry-button {{
+                    font-size: 12px;
+                    background-color: {self.color_theme['primary']};
                 }}
 
                 QLabel#form-label {{
@@ -108,6 +176,113 @@ class Dashboard(QWidget):
 
         self.setup_ui()
         self.title_input.setFocus()
+        self.load_entries()
+
+    def load_entries(self):
+        entries = self.db.query(Entry).all()
+        
+        entries_container = QWidget()
+        entries_container.setObjectName("container")
+        
+        entries_layout = QHBoxLayout(entries_container)
+        entries_layout.setContentsMargins(10, 10, 10, 10)
+        entries_layout.setSpacing(10)
+        entries_layout.setAlignment(Qt.AlignTop)
+
+        for entry in entries:
+            entry_card = QWidget()
+            entry_card.setObjectName("entry-card")
+            
+            entry_card_layout = QHBoxLayout(entry_card)
+            entry_card_layout.setContentsMargins(5, 5, 5, 5)
+            entry_card_layout.setSpacing(5)
+
+            entry_left_container = QWidget()
+            entry_left_container.setObjectName("container")
+
+            entry_left_container_layout = QVBoxLayout(entry_left_container)
+            entry_left_container_layout.setContentsMargins(10, 0, 0, 10)
+            entry_left_container_layout.setSpacing(5)
+
+            entry_title = QLabel(entry.title)
+            entry_title.setObjectName("entry-title")
+            
+            content_preview = entry.content[:50] + '...' if len(entry.content) > 50 else entry.content
+            entry_content = QLabel(content_preview)
+            entry_content.setObjectName("entry-content")
+
+            date_row = QWidget()
+            date_row.setObjectName("container")
+
+            date_row_layout = QHBoxLayout(date_row)
+            date_row_layout.setContentsMargins(5, 5, 5, 5)
+            date_row_layout.setSpacing(10)
+
+            entry_created = QLabel(entry.created_at)
+            entry_created.setObjectName("entry-date")
+            
+            date_row_layout.addWidget(entry_created)
+
+            if entry.updated_at != entry.created_at:
+                entry_updated = QLabel(entry.updated_at)
+                entry_updated.setObjectName("entry-date")
+                entry_updated.setAlignment(Qt.AlignRight)
+
+                date_row_layout.addWidget(entry_updated)
+
+            entry_btn_container = QWidget()
+            entry_btn_container.setObjectName("container")
+
+            entry_btn_container_layout = QVBoxLayout(entry_btn_container)
+            entry_btn_container_layout.setContentsMargins(10, 10, 10, 10)
+            entry_btn_container_layout.setSpacing(10)
+            entry_btn_container_layout.setAlignment(Qt.AlignCenter)
+
+            edit_btn = QPushButton()
+            edit_btn.setObjectName("entry-button")
+            edit_btn.setIcon(fi.PENCIL_INK.icon())
+            edit_btn.clicked.connect(lambda: self.edit_entry(entry.id))
+
+            delete_btn = QPushButton()
+            delete_btn.setObjectName("entry-button")
+            delete_btn.setIcon(fi.DELETE.icon())
+            delete_btn.clicked.connect(lambda: self.delete_entry(entry.id))
+
+            entry_left_container_layout.addWidget(entry_title)
+            entry_left_container_layout.addWidget(entry_content)
+            entry_left_container_layout.addWidget(date_row)
+
+            entry_btn_container_layout.addWidget(edit_btn)
+            entry_btn_container_layout.addWidget(delete_btn)
+
+            entry_card_layout.addWidget(entry_left_container, 2)
+            entry_card_layout.addWidget(entry_btn_container)
+
+            entries_layout.addWidget(entry_card)
+
+        self.scroll_area.setWidget(entries_container)
+
+    def edit_entry(self, entry_id):
+        if not entry_id:
+            return self.handle_error_success("Entry ID Cannot Be Empty")
+        
+        found_entry = self.db.query(Entry).filter(Entry.id == entry_id).first()
+        self.editing_id = found_entry.id
+
+        if not found_entry:
+            return self.handle_error_success(f"No Entry Found By ID: {entry_id}")
+        
+        self.title_input.setText(found_entry.title)
+        self.content_input.setText(found_entry.content)
+
+    def delete_entry(self, entry_id):
+        if not entry_id:
+            return self.handle_error_success("Entry ID Cannot Be Empty!")
+        
+        self.db.query(Entry).filter(Entry.id == entry_id).delete()
+        self.db.commit()
+        self.clear_form()
+        self.load_entries()
 
     def handle_error_success(self, msg: str, is_error: bool = True):
         if is_error:
@@ -150,8 +325,8 @@ class Dashboard(QWidget):
         main_container.setObjectName("container")
 
         main_container_layout = QHBoxLayout(main_container)
-        main_container_layout.setContentsMargins(0, 0, 0, 0)
-        main_container_layout.setSpacing(0)
+        main_container_layout.setContentsMargins(10, 10, 10, 10)
+        main_container_layout.setSpacing(10)
         main_container_layout.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
         self.add_left_side(main_container_layout)
@@ -168,15 +343,30 @@ class Dashboard(QWidget):
         left_container.setObjectName("container")
 
         left_container_layout = QVBoxLayout(left_container)
-        left_container_layout.setContentsMargins(0, 0, 0, 0)
-        left_container_layout.setSpacing(0)
+        left_container_layout.setContentsMargins(10, 10, 10, 10)
+        left_container_layout.setSpacing(10)
         left_container_layout.setAlignment(Qt.AlignCenter)
 
-        label = QLabel("Undeveloped Portion")
+        top_container = QWidget()
+        top_container.setObjectName("summary-area")
+
+        top_container_layout = QVBoxLayout(top_container)
+        top_container_layout.setContentsMargins(0, 0, 0, 0)
+        top_container_layout.setSpacing(0)
+        top_container_layout.setAlignment(Qt.AlignCenter)
+
+        label = QLabel("Undeveloped Area")
         label.setObjectName("form-label")
         label.setAlignment(Qt.AlignCenter)
 
-        left_container_layout.addWidget(label)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setContentsMargins(5, 5, 5, 5)
+
+        top_container_layout.addWidget(label)
+
+        left_container_layout.addWidget(top_container, 1)
+        left_container_layout.addWidget(self.scroll_area, 1)
 
         layout.addWidget(left_container, 1)
         return layout
@@ -186,7 +376,7 @@ class Dashboard(QWidget):
         right_container.setObjectName("container")
         
         right_container_layout = QVBoxLayout(right_container)
-        right_container_layout.setContentsMargins(0, 0, 0, 0)
+        right_container_layout.setContentsMargins(10, 10, 10, 10)
         right_container_layout.setSpacing(10)
         right_container_layout.setAlignment(Qt.AlignTop | Qt.AlignCenter)
 
@@ -211,7 +401,7 @@ class Dashboard(QWidget):
         
         btn_row_layout = QHBoxLayout(btn_row)
         btn_row_layout.setContentsMargins(0, 0, 0, 0)
-        btn_row_layout.setSpacing(0)
+        btn_row_layout.setSpacing(150)
         btn_row_layout.setAlignment(Qt.AlignCenter)
 
         clear_btn = QPushButton("Clear")
@@ -244,6 +434,48 @@ class Dashboard(QWidget):
         self.title_input.setFocus()
 
     def handle_save(self):
+        if self.editing_id:
+            self.update_entry()
+
+        else:
+            self.save_entry()
+
+    def update_entry(self):
+        if not self.editing_id:
+            return self.handle_error_success(f"Target Entry ID Not Set!")
+        
+        updated_title = self.title_input.text().strip()
+        updated_content = self.content_input.toPlainText().strip()
+
+        if not updated_title and not updated_content:
+            return self.handle_error_success("Title & Content Cannot Both Be Empty!")
+        
+        updated_details = {}
+
+        if updated_title:
+            updated_details["title"] = updated_title
+
+        if updated_content:
+            updated_details["content"] = updated_content
+        
+        found_entry = self.db.query(Entry).filter(Entry.id == self.editing_id).first()
+
+        if not found_entry:
+            return self.handle_error_success(f"No Entry Found By ID: {self.editing_id}")
+        
+        self.db.query(Entry).filter(Entry.id == self.editing_id).update(updated_details)
+        self.db.commit()
+        
+        self.editing_id = None
+        self.clear_form()
+        self.load_entries()
+        
+        return self.handle_error_success("Entry Updated Successfully!", False)
+
+    def save_entry(self):
+        if self.editing_id:
+            return self.update_entry()
+        
         new_title = self.title_input.text().strip()
         new_content = self.content_input.toPlainText().strip()
 
@@ -263,5 +495,6 @@ class Dashboard(QWidget):
         self.db.add(new_entry)
         self.db.commit()
         self.clear_form()
+        self.load_entries()
 
         return self.handle_error_success("Entry Saved Successfully!", False)
