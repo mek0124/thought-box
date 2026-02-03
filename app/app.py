@@ -1,37 +1,27 @@
 from qfluentwidgets import (
-    MSFluentWindow, setTheme, Theme,
-    setThemeColor, FluentIcon
+    MSFluentWindow, FluentIcon as fi,
+    setTheme, Theme, setThemeColor
 )
 
 from .pages.dashboard import Dashboard
-from .pages.entry import Entry
-
-from .utils.color_theme import COLOR_THEME
 
 
 class ThoughtBox(MSFluentWindow):
-    def __init__(self, db):
+    def __init__(self, color_theme, db):
         super().__init__()
 
+        self.color_theme = color_theme
         self.db = db
-        self.dashboard = Dashboard(self)
-        self.entry = Entry(self)
 
-        self.set_app_theme()
+        self.dashboard = Dashboard(self)
+
+        self.apply_app_styles()
         self.init_navigation()
 
-    def set_app_theme(self):
+    def apply_app_styles(self):
         setTheme(Theme.DARK)
-        setThemeColor(COLOR_THEME['primary'])
-
-        self.setStyleSheet(
-            f"background-color: {COLOR_THEME['background']};"
-        )
+        setThemeColor(self.color_theme['primary'])
+        self.setStyleSheet(f"background-color: {self.color_theme['background']}")
 
     def init_navigation(self):
-        self.addSubInterface(self.dashboard, FluentIcon.HOME, "Dashboard")
-        self.addSubInterface(self.entry, FluentIcon.PENCIL_INK, "Entry")
-
-    def closeEvent(self, event):
-        self.db.close()
-        event.accept()
+        self.addSubInterface(self.dashboard, fi.APPLICATION, "Dashboard")

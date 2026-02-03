@@ -26,7 +26,6 @@ SessionLocal = sessionmaker(
     autoflush=False
 )
 
-
 def get_base():
     return Base
 

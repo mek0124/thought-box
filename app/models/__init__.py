@@ -1,3 +1,4 @@
-from .entry import EntryModel
+from .entry import Entry
 
-__all__ = ["EntryModel"]
+
+__all__ = ["Entry"]
