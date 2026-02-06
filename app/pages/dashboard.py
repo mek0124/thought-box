@@ -198,7 +198,7 @@ class Dashboard(QWidget):
         if updated_content:
             updated_details["content"] = updated_content
 
-        did_update, response = self.logic.update_entry(self.editing_id, updated_content)
+        did_update, response = self.logic.update_entry(self.editing_id, updated_details)
         
         if not did_update:
             return self.handle_error_success(response, did_update)
@@ -206,6 +206,7 @@ class Dashboard(QWidget):
         self.editing_id = None
         self.clear_form()
         self.load_entries()
+        self.update()
         
         return self.handle_error_success(response, did_update)
 
@@ -332,26 +333,11 @@ class Dashboard(QWidget):
         left_container_layout.setSpacing(10)
         left_container_layout.setAlignment(Qt.AlignCenter)
 
-        top_container = QWidget()
-        top_container.setObjectName("summary-area")
-
-        top_container_layout = QVBoxLayout(top_container)
-        top_container_layout.setContentsMargins(0, 0, 0, 0)
-        top_container_layout.setSpacing(0)
-        top_container_layout.setAlignment(Qt.AlignCenter)
-
-        label = QLabel("Undeveloped Area")
-        label.setObjectName("form-label")
-        label.setAlignment(Qt.AlignCenter)
-
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setContentsMargins(5, 5, 5, 5)
 
-        top_container_layout.addWidget(label)
-
-        left_container_layout.addWidget(top_container, 1)
-        left_container_layout.addWidget(self.scroll_area, 1)
+        left_container_layout.addWidget(self.scroll_area)
 
         layout.addWidget(left_container, 1)
         return layout

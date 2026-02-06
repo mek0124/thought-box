@@ -47,33 +47,34 @@ class ThoughtBoxLogic:
         except Exception as e:
             return True, "Failed To Save Entry"
         
-    def update_entry(self, entry_id: int, updated_entry: dict) -> Tuple[bool, Optional[Entry], str]:
+    def update_entry(self, entry_id: int, updated_entry: dict) -> Tuple[bool, str]:
         if not entry_id or not updated_entry:
-            return True, None, "Entry ID and Updated Details Are Required!"
+            return True, "Entry ID and Updated Details Are Required!"
         
         if not entry_id:
-            return True, None, "Entry ID Cannot Be Empty!"
+            return True, "Entry ID Cannot Be Empty!"
         
         if not updated_entry:
-            return True, None, "Title & Content Cannot Be Empty!"
+            return True, "Title & Content Cannot Be Empty!"
         
         found_entry = self.db.query(Entry).filter(Entry.id == entry_id).first()
 
         if not found_entry:
-            return True, None, f"No Entry Found By ID: {entry_id}"
+            return True, f"No Entry Found By ID: {entry_id}"
         
         if found_entry.title == updated_entry["title"] and \
             found_entry.content == updated_entry["content"]:
 
-            return False, None, "No Changes Made"
+            return False, "No Changes Made"
         
         try:
-            updated_entry = self.db.query(Entry).filter(Entry.id == entry_id).udpate(updated_entry)
-            return False, updated_entry, "Entry Updated Successfully"
+            updated_entry = self.db.query(Entry).filter(Entry.id == entry_id).update(updated_entry)
+            self.db.commit()
+            return False, "Entry Updated Successfully"
         
         except Exception as e:
             print(f"Unknown Exception Updating Entry: {e}")
-            return False, None, "Failed To Update Entry"
+            return False, "Failed To Update Entry"
         
     def delete_entry(self, entry_id: int) -> Tuple[bool, str]:
         if not entry_id:
@@ -81,6 +82,7 @@ class ThoughtBoxLogic:
         
         try:
             self.db.query(Entry).filter(Entry.id == entry_id).delete()
+            self.db.commit()
             return False, "Entry Deleted Successfully"
 
         except Exception as e:
