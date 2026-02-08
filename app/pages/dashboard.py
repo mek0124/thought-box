@@ -36,9 +36,10 @@ class Dashboard(QWidget):
                     border-top: 2px solid {self.color_theme['primary']};
                     border-bottom: 2px solid {self.color_theme['primary']};
                     border-radius: {self.color_theme['border_radius_small']};
+                    background-color: {self.color_theme['surface_glass']};
                 }}
 
-                                QScrollArea {{
+                QScrollArea {{
                     border-left: 2px solid {self.color_theme['primary']};
                     border-top: 2px solid {self.color_theme['primary']};
                     border-bottom: 2px solid {self.color_theme['primary']};
@@ -239,6 +240,8 @@ class Dashboard(QWidget):
 
     def handle_entry_delete(self, entry_id):
         did_delete, response = self.logic.delete_entry(entry_id)
+        self.clear_form()
+        self.load_entries()
         return self.handle_error_success(response, did_delete)
 
     def handle_entry_edit(self, entry_id):
